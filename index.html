@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grand-Papa — 1935–2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream: #FAF7F2;
+    --linen: #F0EBE1;
+    --ink: #2A2015;
+    --ink-muted: #6B5E4A;
+    --ink-faint: #9C8E7A;
+    --divider: rgba(107,94,74,0.15);
+    --blue: #378ADD;
+    --blue-light: #B5D4F4;
+    --H: 220px; /* hauteur fixe de toutes les mosaïques */
+  }
+
+  html, body {
+    min-height: 100%;
+    width: 100%;
+    max-width: 100%;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'Inter', Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
+  }
+
+  .app-header {
+    padding: 52px 24px 20px;
+    border-bottom: 0.5px solid var(--divider);
+  }
+  .app-title {
+    font-family: 'Lora', Georgia, serif;
+    font-size: 28px;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.1;
+  }
+  .app-sub {
+    font-size: 13px;
+    color: var(--ink-faint);
+    margin-top: 5px;
+    letter-spacing: 0.02em;
+  }
+
+  .feed { padding-bottom: 64px; }
+  .moment { padding: 28px 24px 0; }
+
+  .moment-year {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--blue);
+    letter-spacing: 0.08em;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+  }
+  .moment-title {
+    font-family: 'Lora', Georgia, serif;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.25;
+    margin-bottom: 14px;
+  }
+
+  /* ── Tuile de base ── */
+  .photo-tile {
+    background: var(--linen);
+    border: 0.5px dashed rgba(107,94,74,0.25);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity 0.12s;
+  }
+  .photo-tile:active { opacity: 0.75; }
+  .photo-tile img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+  .tile-icon {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--ink-faint);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tile-label { font-size: 12px; color: var(--ink-faint); }
+
+  /*
+    Stratégie :
+    - .moment a padding-left: 24px pour le texte
+    - Les mosaïques s'échappent avec margin-left: -24px pour partir du bord gauche de l'écran
+    - Puis on réintroduit padding-left: 24px sur le conteneur flex
+    - overflow: hidden coupe à droite proprement
+    - Pour le strip scrollable : overflow-x: auto au lieu de hidden
+  */
+  /* Base commune */
+  .mosaic, .strip {
+    margin: 0 0 14px -24px;
+    padding-left: 24px;
+    height: var(--H);
+    display: flex;
+    gap: 0;
+  }
+
+  /* Mosaïque fixe — gap entre tuiles via gap CSS */
+  .mosaic { overflow: hidden; gap: 3px; }
+
+  /* Strip scrollable — déborde jusqu'au bord droit, scroll horizontal */
+  .strip {
+    margin-right: -24px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .strip::-webkit-scrollbar { display: none; }
+  /* Espaceur à la fin du strip — indique visuellement la fin du scroll */
+  .strip-end { flex-shrink: 0; width: 24px; }
+  .strip .photo-tile {
+    width: 70vw;
+    max-width: 280px;
+    height: 100%;
+    flex-shrink: 0;
+  }
+
+  /* 1 photo — s'étend jusqu'à la marge droite */
+  .mosaic.m1 .photo-tile { flex: 1; height: 100%; min-width: 0; }
+
+  /* 2 photos — grande gauche, petite droite */
+  .mosaic.m2 .photo-tile:nth-child(1) { width: 58%; height: 100%; flex-shrink: 0; }
+  .mosaic.m2 .photo-tile:nth-child(2) { flex: 1; height: 100%; min-width: 0; }
+
+  /* 3 photos — grande gauche + 2 empilées droite */
+  .mosaic.m3 .photo-tile.main { width: 54%; height: 100%; flex-shrink: 0; }
+  .mosaic.m3 .col {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    min-width: 0;
+  }
+  .mosaic.m3 .col .photo-tile { width: 100%; flex: 1; }
+
+  /* layout:strip — toutes les photos côte à côte égales */
+  .mosaic.m2-strip .photo-tile { flex: 1; height: 100%; min-width: 0; }
+  .mosaic.m3-strip .photo-tile { flex: 1; height: 100%; min-width: 0; }
+
+  /* 4 photos mixed : grande gauche | 2 empilées centre | grande droite */
+  .mosaic.m4-mixed .photo-tile.main-left  { width: 38%; height: 100%; flex-shrink: 0; }
+  .mosaic.m4-mixed .col {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    width: 24%;
+    flex-shrink: 0;
+  }
+  .mosaic.m4-mixed .col .photo-tile { width: 100%; flex: 1; }
+  .mosaic.m4-mixed .photo-tile.main-right { flex: 1; height: 100%; min-width: 0; }
+
+  .moment-desc {
+    font-size: 14px;
+    color: var(--ink-muted);
+    line-height: 1.7;
+    padding-bottom: 28px;
+    border-bottom: 0.5px solid var(--divider);
+  }
+  .moment:last-child .moment-desc { border-bottom: none; }
+
+  /* ── Lightbox ── */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    background: #1A1208;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .lightbox.open { opacity: 1; pointer-events: all; }
+
+  .lb-top {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    padding: 14px 12px 8px;
+    gap: 8px;
+  }
+  @supports (padding-top: env(safe-area-inset-top)) {
+    .lb-top { padding-top: calc(env(safe-area-inset-top) + 10px); }
+    .lb-bottom { padding-bottom: calc(env(safe-area-inset-bottom) + 12px) !important; }
+  }
+
+  .lb-info {
+    flex: 1; min-width: 0;
+    font-size: 12px;
+    color: rgba(255,255,255,0.65);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .lb-info-year { color: var(--blue-light); font-weight: 500; }
+  .lb-info-sep { margin: 0 5px; color: rgba(255,255,255,0.25); }
+
+  .lb-counter {
+    flex-shrink: 0;
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+    letter-spacing: 0.04em;
+    padding: 0 4px;
+  }
+
+  .lb-close {
+    flex-shrink: 0;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .lb-close:active { background: rgba(255,255,255,0.2); }
+
+  .lb-photo-area {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    min-height: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .lb-slider {
+    display: flex;
+    height: 100%;
+    transition: transform 0.32s cubic-bezier(0.25,0.46,0.45,0.94);
+    will-change: transform;
+  }
+  .lb-slide {
+    flex-shrink: 0;
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    padding: 6px;
+  }
+  .lb-slide img {
+    max-width: 100%; max-height: 100%;
+    object-fit: contain;
+    border-radius: 3px;
+    display: block;
+  }
+  .lb-placeholder {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 12px; width: 100%; height: 100%;
+  }
+  .lb-placeholder span { font-size: 13px; color: rgba(255,255,255,0.25); }
+
+  /* Flèches centrées verticalement sur les bords */
+  .lb-arrow {
+    position: absolute;
+    top: 50%; transform: translateY(-50%);
+    width: 64px; height: 96px;
+    background: transparent;
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+    z-index: 2;
+  }
+  .lb-arrow.prev { left: 0; }
+  .lb-arrow.next { right: 0; }
+  .lb-arrow.hidden { opacity: 0; pointer-events: none; }
+  .lb-arrow svg { width: 18px; height: 18px; stroke: rgba(255,255,255,0.55); fill: none; }
+  .lb-arrow:active svg { stroke: rgba(255,255,255,0.9); }
+
+  /* Footer légende uniquement — hauteur fixe même sans texte */
+  .lb-bottom {
+    flex-shrink: 0;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 24px 16px;
+  }
+  .lb-caption {
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.45;
+    text-align: center;
+  }
+
+  /* Mode immersif — UI caché au tap */
+  .lb-top, .lb-bottom, .lb-arrow {
+    transition: opacity 0.22s, visibility 0.22s;
+  }
+  .lightbox.immersive .lb-top,
+  .lightbox.immersive .lb-bottom,
+  .lightbox.immersive .lb-arrow { opacity: 0; visibility: hidden; pointer-events: none; }
+  .lightbox.immersive .lb-slide { padding: 0; }
+  .lb-slide { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .lb-slide img { touch-action: pinch-zoom; user-select: none; }
+
+  /* ══════════════════════════════════════════════
+     DESKTOP — breakpoint 768px
+     Contenu centré, 680px max, mosaïques plus hautes,
+     strips scrollables remplacés par des grilles fixes.
+  ══════════════════════════════════════════════ */
+  @media (min-width: 768px) {
+    :root {
+      --H: 380px;
+    }
+
+    body {
+      /* Fond étendu pleine largeur, contenu centré */
+    }
+
+    .app-header {
+      padding: 72px 0 28px;
+      max-width: 680px;
+      margin: 0 auto;
+      /* Le border-bottom doit couvrir toute la largeur */
+      position: relative;
+    }
+    /* Ligne séparatrice pleine largeur */
+    .app-header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100vw;
+      height: 0.5px;
+      background: var(--divider);
+    }
+
+    .app-title { font-size: 38px; }
+    .app-sub   { font-size: 14px; margin-top: 7px; }
+
+    .feed { max-width: 680px; margin: 0 auto; }
+
+    /* Sur desktop, .moment n'a plus de padding latéral asymétrique —
+       le centrage est géré par .feed. On garde un padding uniforme. */
+    .moment { padding: 40px 0 0; }
+
+    .moment-year  { font-size: 12px; }
+    .moment-title { font-size: 22px; margin-bottom: 18px; }
+    .moment-desc  { font-size: 15px; padding-bottom: 40px; }
+
+    /* Les mosaïques n'ont plus besoin de s'échapper du padding —
+       le feed est déjà à 680px, on retire le margin-left négatif. */
+    .mosaic, .strip {
+      margin-left: 0;
+      padding-left: 0;
+    }
+    .strip {
+      margin-right: 0;
+      /* Les strips deviennent des grilles fixes — pas de scroll */
+      overflow-x: hidden;
+      flex-wrap: wrap;
+      height: auto;
+      gap: 4px;
+    }
+    .strip-end { display: none; }
+
+    /* Hover subtil sur les tuiles en desktop */
+    .photo-tile {
+      transition: opacity 0.18s, transform 0.18s;
+    }
+    .photo-tile:hover {
+      opacity: 0.92;
+      transform: scale(1.008);
+    }
+    .photo-tile:active { opacity: 0.75; transform: none; }
+
+    /* Lightbox : flèches plus grandes et mieux placées sur desktop */
+    .lb-arrow { width: 80px; height: 120px; }
+    .lb-arrow svg { width: 22px; height: 22px; }
+    .lb-top { padding: 20px 20px 10px; }
+    .lb-info { font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+
+<script>
+/* ================================================================
+   COMMENT AJOUTER LE CONTENU
+   ================================================================
+
+   Chaque moment se définit comme ceci :
+
+     {
+       year:    "1958",
+       title:   "Mariage",
+       desc:    "Texte descriptif.",
+       position: "center",  // recadrage par défaut : "top" | "center" | "bottom"
+
+       // ── Disposition ──────────────────────────────────────
+       //
+       // layout: "side-by-side"   photos côte à côte (défaut)
+       // layout: "alternating"    alternance 1 grande photo / 2 photos empilées
+       //
+       // scroll: false            mosaïque fixe pleine largeur (défaut)
+       // scroll: true             strip scrollable horizontal
+       // scroll: 1.8              "side-by-side" : 1.8 photos visibles à l'écran
+       // scroll: 1.25             "alternating"  : 1.25 groupes visibles à l'écran
+       //                          (1 groupe = 1 grande photo + 2 empilées)
+       //                          (nombre décimal = aperçu du groupe suivant)
+       //
+       // weights: [60, 40]        proportions relatives des colonnes (optionnel)
+       //                          fonctionne avec tous les layouts et scroll
+       //                          "side-by-side" 2 photos : [gauche, droite]
+       //                          "side-by-side" 3 photos : [grande, haut, bas]
+       //                          "alternating" uniforme   : [grande, côté]
+       //                          "alternating" par groupe : [[65,35],[50,50],[70,30]]
+       //                            → un tableau par groupe de 3 photos
+       //                            → le dernier weights est réutilisé si moins de groupes définis
+       //
+       // ── Photos ───────────────────────────────────────────
+       photos: [
+         { src: "photos/img1.jpg", caption: "Légende", position: "top"    },
+         { src: "photos/img2.jpg", caption: "",         position: "center" },
+         { src: null,              caption: "" },
+       ]
+     },
+
+   EXEMPLES RAPIDES :
+   ─────────────────────────────────────────────────────────────
+   2 photos fixes côte à côte, 60/40 :
+     layout: "side-by-side", scroll: false, weights: [60, 40]
+
+   4 photos qui scrollent côte à côte :
+     layout: "side-by-side", scroll: 1.8
+
+   Alternance grande/2empilées fixe :
+     layout: "alternating", scroll: false
+
+   Alternance grande/2empilées qui scrolle, 1.6 groupes visibles :
+     layout: "alternating", scroll: 1.6
+
+   AJOUTER UNE PHOTO :
+     Mets le fichier dans un dossier "photos/" à côté de ce HTML,
+     puis écris : src: "photos/nom.jpg"
+     URL en ligne : src: "https://..."
+     Pas encore disponible : src: null
+   ================================================================ */
+
+const MOMENTS = [
+  {
+    year: "11 décembre 1935",
+    title: "Les racines à Rivière-Ouelle",
+    desc: "Naissance chez les Gagnon-Bérubé, sous le regard bienveillant de sa marraine Antonia.",
+    layout: "side-by-side", scroll: false,
+    photos: [
+      { src: "photos/parents-Gilbert.jpeg", caption: "Elzéar Gagnon et Marie-Anna Bérubé, parents de Gilbert" },
+      { src: "photos/marraine-antonia-tante-maternelle.jpeg", caption: "Antonia Bérubé, tante maternelle et marraine de Gilbert" },
+    ]
+  },
+  {
+    year: "Années 1940",
+    title: "Une fratrie de quatorze",
+    desc: "Apprendre la solidarité et le travail acharné au cœur de la ferme familiale.",
+    layout: "alternating", scroll: 1.3,
+    photos: [
+       { src: "photos/1940X-riviere-ouelle.jpg", caption: "Gilbert et Roger", position: "left 30%" },
+
+      { src: "photos/1941-famille.jpg", caption: "" },
+       { src: "photos/1941-famille-legende.jpg", caption: "" },
+      { src: "photos/1948-mai.jpg", caption: "" },
+      { src: "photos/moutons.jpg", caption: "" },
+      { src: "photos/vieille-grange.jpeg", caption: "" },
+      { src: "photos/1949-50.jpg", caption: "", position: "center 30%" },
+    ]
+  },
+ {
+    year: "1951 – 1955",
+    title: "Forger son avenir",
+    desc: "Études à Rimouski et perfectionnement technique pour tracer son propre chemin.",
+    layout: "side-by-side", scroll: 1.7,
+    position: "top",
+    photos: [
+     { src: "photos/1951-rimouski-2.jpeg", caption: "" }, 
+     { src: "photos/1951-53-finissants-rimouski-1.jpeg", caption: "" },
+      { src: "photos/1951-rimouski.jpeg", caption: "" },
+     { src: "photos/1954-55-etudes.jpeg", caption: "Gilbert est dans la rangée du bas, complètement à droite", position: "right bottom" },
+      { src: "photos/1955-rimouski.jpeg", caption: "", position: "center top" },
+    ]
+  },
+
+ {
+    year: "1953",
+    title: "La fierté du clan",
+    desc: "Réunis pour l'ordination de son frère, Gilbert célèbre les réussites et les moments forts de sa grande famille.",
+    layout: "side-by-side", scroll: false,
+    photos: [
+     { src: "photos/1953.jpg", caption: "" }, 
+    
+    ]
+  },
+
+ 
+ {
+    year: "1956",
+    title: "Le coup de foudre inattendu à Beauharnois",
+    desc: "Un travail loin de chez lui, une invitation à une fête et la rencontre d'une vie avec Monique.",
+    layout: "side-by-side", scroll: 1.4,
+    position: "top",
+    photos: [
+      { src: "photos/1956-8X-1.jpeg", caption: "" },
+      { src: "photos/1956-chutes-bnois.jpeg", caption: "Les chutes à Beauharnois" },
+     { src: "photos/1959-mai-didi-mimi.jpeg", caption: "Avec les jumelles Diane et Micheline, au 61 rue St-Charles" },
+     { src: "photos/1958-mai-st-charles.jpeg", caption: "" },
+    ]
+  },
+
+ {
+    year: "1956 – 1959",
+    title: "Voyager pour mieux bâtir",
+    desc: "Entre le Kamouraska et les Bermudes, il travaille sans relâche pour offrir le meilleur aux siens.",
+    layout: "alternating", scroll: 1.2,
+    weights: [60, 40],
+    photos: [
+      { src: "photos/1957-riviere-ouelle.jpeg", caption: "À Rivière-Ouelle" },
+      { src: "photos/1956-8X.jpeg", caption: "Lucien, Émilienne, Monique, Gilbert et les jumelles Diane et Micheline à l'oratoire St-Joseph" },
+      { src: "photos/1956-pontiac.jpeg", caption: "" },
+      { src: "photos/1957-famille.jpeg", caption: "Gilbert, Monique, Germain, Thérèse, Raymond et Jean-Guy à La Pocatière" },
+      { src: "photos/1958-rene-tardif.jpeg", caption: "1958, chez Rémi Tardif, Ste-Louise. Germain, Gilbert, Roger, Philippe, Eugène, Roger" },
+      { src: "photos/1958.jpeg", caption: "Probablement chez Rémi Tardif, à Ste-Louise." },
+      { src: "photos/1957-aout-grange.jpeg", caption: "Grange en construction, Rivière-Ouelle" },
+      { src: "photos/1956X-villamaria.jpeg", caption: "" },
+      { src: "photos/1956-villamaria.jpeg", caption: "4245 boulevard Décarie, Villa Maria. 1956. Avec Gaétan Lebel" },
+     { src: "photos/1958-riviere-ouelle.jpeg", caption: "", position: "center center" },
+     
+    ]
+  },
+
+{
+    year: "1960",
+    title: "Le grand «Oui» à St-Clément",
+    desc: "Célébration de son amour avec Monique à Beauharnois, le début de leur longue histoire.",
+    layout: "side-by-side", scroll: false,
+    weights: [35, 65],
+    position: "center",
+    photos: [
+      { src: "1960-mariage.jpeg", caption: "", position: "35% center" },
+      { src: "photos/1960-mariage-3.jpeg", caption: "" },
+    ]
+  },
+
+ {
+    year: "Années 1960",
+    title: "Devenir papa",
+    desc: "L’arrivée de Myriam et Josée et la construction d'un foyer rempli de tendresse et d’animaux.",
+    layout: "alternating", scroll: false,
+    position: "center",
+    photos: [
+      { src: "photos/1970X-communion-maman.jpeg", caption: "", position: "center 35%" },
+      { src: "photos/1964X-maman-bebe.jpeg", caption: "Gilbert avec Myriam à quelques mois", position: "85% 45" },
+     { src: "photos/1970X-famille.jpeg", caption: "" },
+    ]
+  },
+
+ {
+    year: "Années 1970 - 1980",
+    title: "L'esprit de famille élargie",
+    desc: "Entre la croissance de ses filles et sa passion pour les animaux, il devient le pilier central pour tous ses proches.",
+    layout: "alternating", scroll: 1.2,
+    weights: [45, 55],
+    photos: [
+     { src: "photos/1970X-2.jpeg", caption: "" }, 
+     { src: "photos/1970X-3.jpeg", caption: "", position: "92% 50%" },
+      { src: "photos/1970X-1.jpeg", caption: "", position: "center 48%" },
+      { src: "photos/gertrude.jpg", caption: "Avec Gertrude" },
+      { src: "photos/lucien-jeanne.jpg", caption: "Avec Lucien Gagnon et Jeanne" },
+    ]
+  },
+
+ {
+    year: "1960 - 1995",
+    title: "Elkem",
+    desc: "Plus de 25 ans de loyaux services à l’usine pour assurer le bien-être des siens.",
+    layout: "side-by-side", scroll: false,
+    position: "top",
+    photos: [
+      { src: "photos/1965-1990-elkem.jpeg", caption: "" },
+    ]
+  },
+
+ {
+    year: "À partir de 1989",
+    title: "Grand-papa aux mille histoires",
+    desc: "Toujours prêt à nous recevoir, il nous entourait de sa générosité et de ses récits inépuisables.",
+    layout: "alternating", scroll: 1.2,
+    position: "center",
+    photos: [
+          { src: "photos/1998-mars.jpeg", caption: "Avec Timothée, Béatrice, Samuel, Émilie et Alexandre", position: "center 23%" },
+     { src: "photos/1989-alexandre.png", caption: "Naissance d'Alexandre", position: "center top" },
+     { src: "photos/1990X-bapteme-samuel.jpeg", caption: "Baptême de Samuel", position: "20% center" },
+          { src: "photos/1997X.jpeg", caption: "", position: "25% center" },
+     { src: "photos/1994-avril.jpeg", caption: "", position: "center 30%" },
+          { src: "photos/1995-septembre.jpeg", caption: "" },
+     { src: "photos/1997-noel.jpeg", caption: "" },
+
+     { src: "photos/1998-aout-quai.jpeg", caption: "", position: "left center" },
+     { src: "photos/1998-aout-beatrice.jpeg", caption: "Avec Béatrice", position: "left center" },
+
+    ]
+  },
+
+ {
+    year: "1998",
+    title: "La tournée familiale",
+    desc: "Roadtrip mémorable vers l'Est pour saluer ses frères et sœurs et honorer son histoire.",
+    layout: "alternating", scroll: 1.2,
+    position: "center",
+    photos: [
+     { src: "photos/1998-aout-1.jpeg", caption: "" },
+     { src: "photos/1998-aout-gemma.jpeg", caption: "Chez Gemma" },
+     { src: "photos/1998-aout-2.jpeg", caption: "Germain, Robert et Gilbert chez Germain" },
+     { src: "photos/1998-aout.jpeg", caption: "", position: "40% 90%" },
+     { src: "photos/1998-aout-therese.jpeg", caption: "Chez Thérèse, la femme d'Elzéar (frère de Gilbert)" },
+     { src: "photos/1998-aout-maurice.jpeg", caption: "Gilbert et Maurice au presbytère de l'Isle Verte" },
+     { src: "photos/1998-aout-3.jpeg", caption: "Chez Marie-Ange à St-Jean-Port-Joli", position: "39% center" },
+
+    ]
+  },
+ 
+  {
+    year: "À partir de 2017",
+    title: "Une nouvelle génération",
+    desc: "Dix petits visages qui illuminaient son regard et prolongeaient l'histoire des Gagnon.",
+    layout: "side-by-side", scroll: 1.1,
+    position: "center",
+    photos: [
+      { src: "photos/2025X.png", caption: "", position: "right 60%" },
+      { src: "photos/2025-olivier.jpg", caption: "Alexandre, Olivier et Gilbert", position: "center 20%" },
+      { src: "photos/noemie.JPEG", caption: "Avec Noémie", position: "center 25%" },
+           { src: "photos/charlands.jpeg", caption: "Colin, Axelle (enfants de Timothée) et Alec (enfant de Samuel)" },
+           { src: "photos/pregent.jpeg", caption: "Léo, Henri et Alfred, les enfants d'Émilie" },
+    ]
+  },
+  {
+    year: "2025",
+    title: "90 ans de générosité",
+    desc: "Célébré et entouré, un moment pour honorer l'homme au cœur d'or et aux mille histoires.",
+    layout: "side-by-side", scroll: false,
+    weights: [40, 30, 30],
+    photos: [
+      { src: "photos/2025-90-spag-3.png", caption: "", position: "35% 40%" },
+      { src: "photos/2025-90-resto.jpg", caption: "Fête surprise au restaurant", position: "left 60%" },
+      { src: "photos/2025-90-spag.jpg", caption: "Dîner chez Myriam avec toute la famille", position: "center 40%" },
+    ]
+  },
+
+ {
+    year: "2026",
+    title: "Le temps des loisirs",
+    desc: "Installé en résidence, il profitait de chaque instant pour faire ses mots-croisés et gagner ses dernières parties de cartes.",
+    layout: "side-by-side", scroll: false,
+    weights: [60, 40],
+    photos: [
+           { src: "photos/2026-residences.jpeg", caption: "", position: "right center" },
+
+     { src: "photos/2026-residences.jpg", caption: "", position: "center top" },
+    ]
+  },
+
+ 
+  {
+    year: "13 avril 2026",
+    title: "Partir rejoindre sa gang",
+    desc: "Sans un adieu, il s'en est allé retrouver sa femme, ses frères et ses sœurs qui l'attendaient de l'autre côté.",
+    layout: "side-by-side", scroll: false,
+    photos: []
+  },
+];
+ 
+</script>
+
+<header class="app-header">
+  <div class="app-title">Gilbert</div>
+  <div class="app-sub">1935 – 2026</div>
+</header>
+
+<main class="feed" id="feed"></main>
+
+<div class="lightbox" id="lightbox">
+  <div class="lb-top">
+    <div class="lb-info">
+      <span class="lb-info-year" id="lb-year"></span>
+      <span class="lb-info-sep">—</span>
+      <span id="lb-title"></span>
+    </div>
+    <div class="lb-counter" id="lb-counter"></div>
+    <button class="lb-close" onclick="closeLightbox()">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="1.5" stroke-linecap="round">
+        <line x1="1.5" y1="1.5" x2="11.5" y2="11.5"/>
+        <line x1="11.5" y1="1.5" x2="1.5" y2="11.5"/>
+      </svg>
+    </button>
+  </div>
+  <div class="lb-photo-area" id="lb-photo-area">
+    <div class="lb-slider" id="lb-slider"></div>
+    <button class="lb-arrow prev" id="lb-prev" onclick="event.stopPropagation(); lbNavigate(-1)">
+      <svg viewBox="0 0 16 16"><polyline points="10 3 5 8 10 13" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="lb-arrow next" id="lb-next" onclick="event.stopPropagation(); lbNavigate(1)">
+      <svg viewBox="0 0 16 16"><polyline points="6 3 11 8 6 13" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+  <div class="lb-bottom">
+    <div class="lb-caption" id="lb-caption"></div>
+  </div>
+</div>
+
+<script>
+let lbMomentIdx = 0;
+let lbPhotoIdx  = 0;
+
+const ICON = `<div class="tile-icon">
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <rect x="1" y="2.5" width="14" height="11" rx="2" stroke="#9C8E7A" stroke-width="1.2"/>
+    <circle cx="8" cy="8" r="2.5" stroke="#9C8E7A" stroke-width="1.2"/>
+  </svg></div><span class="tile-label">Photo à venir</span>`;
+
+// Génère une tuile — lit position sur la photo en priorité, sinon le défaut du moment
+function tile(mi, pi, p, extraClass, defaultPos) {
+  const cls = 'photo-tile' + (extraClass ? ' ' + extraClass : '');
+  const pos = p.position || defaultPos || 'top';
+  const inner = p.src
+    ? `<img src="${p.src}" alt="${p.caption||''}" style="object-position:${pos};">`
+    : ICON;
+  return `<div class="${cls}" onclick="openLightbox(${mi},${pi})">${inner}</div>`;
+}
+
+// Génère une tuile inline pour strip (largeur en vw)
+function stripTile(mi, pi, p, vw, defaultPos) {
+  const pos = p.position || defaultPos || 'top';
+  const inner = p.src
+    ? `<img src="${p.src}" alt="${p.caption||''}" style="object-position:${pos};">`
+    : ICON;
+  return `<div class="photo-tile" style="width:${vw}vw;height:100%;flex-shrink:0;" onclick="openLightbox(${mi},${pi})">${inner}</div>`;
+}
+
+function buildMosaic(mi, m) {
+  const photos = m.photos;
+  const n = photos.length;
+  if (n === 0) return '';
+
+  const defaultPos = m.position || 'top';
+  const layout     = m.layout || 'side-by-side';
+  const scroll     = m.scroll !== undefined ? m.scroll : false;
+  const w          = m.weights;
+  const GAP        = 3; // px — gap uniforme partout
+
+  // Breakpoint desktop
+  const isDesktop  = window.innerWidth >= 768;
+
+  // En mode desktop, on force tout en mode fixe (pas de scroll)
+  const isScroll   = isDesktop ? false : (scroll !== false);
+  const cols       = typeof scroll === 'number' ? scroll : (scroll === true ? n : null);
+
+  // ── Helpers ───────────────────────────────────────────────
+
+  // Largeur disponible selon le contexte
+  function availWidth() {
+    if (isDesktop) return Math.min(window.innerWidth - 48, 680); // colonne centrée 680px
+    return window.innerWidth - 24; // mobile : padding 24px gauche seulement
+  }
+
+  // Largeur d'une colonne dans un strip mobile, en tenant compte du GAP entre colonnes visibles
+  function colPx(numCols) {
+    const screenW = Math.min(window.innerWidth, 480);
+    return Math.round((screenW - 24 - GAP * (numCols - 1)) / numCols);
+  }
+
+  // Flexbox img tile (pour les layouts fixes — flex gère la largeur)
+  function flexTile(pi, p, flexVal, extraStyle='') {
+    const pos = p.position || defaultPos;
+    const inner = p.src ? `<img src="${p.src}" style="object-position:${pos};">` : ICON;
+    return `<div class="photo-tile" style="flex:${flexVal};min-width:0;height:100%;${extraStyle}" onclick="openLightbox(${mi},${pi})">${inner}</div>`;
+  }
+
+  // Pixel-exact tile (pour les strips — flex ne peut pas gérer les largeurs dans un scroll)
+  function pxTile(pi, p, widthPx, heightStyle='height:100%;') {
+    const pos = p.position || defaultPos;
+    const inner = p.src ? `<img src="${p.src}" style="object-position:${pos};">` : ICON;
+    return `<div class="photo-tile" style="width:${widthPx}px;flex-shrink:0;${heightStyle}" onclick="openLightbox(${mi},${pi})">${inner}</div>`;
+  }
+
+  // Spacer div (remplace gap CSS dans les strips pour un calcul px exact)
+  function spacer(px, dir='h') {
+    return dir === 'h'
+      ? `<div style="width:${px}px;flex-shrink:0;"></div>`
+      : `<div style="height:${px}px;flex-shrink:0;"></div>`;
+  }
+
+  // Proportions weights → flex values normalisées
+  function flexWeights(defaults) {
+    const src = w || defaults;
+    const total = src.reduce((a,b) => a+b, 0);
+    return src.map(v => v / total * 100);
+  }
+
+  // Conteneur mosaïque fixe
+  function fixedWrap(inner) {
+    if (isDesktop) {
+      // Desktop : dans la colonne centrée, pas de margin négatif
+      return `<div style="height:var(--H);display:flex;gap:${GAP}px;margin:0 0 18px 0;overflow:hidden;border-radius:3px;">${inner}</div>`;
+    }
+    // Mobile : s'échappe du padding pour aller bord à bord
+    return `<div style="height:var(--H);display:flex;gap:${GAP}px;margin:0 0 14px -24px;padding-left:24px;overflow:hidden;">${inner}</div>`;
+  }
+
+  // Conteneur strip scrollable (mobile uniquement — desktop utilise fixedWrap)
+  function stripWrap(inner) {
+    return `<div class="strip" style="gap:${GAP}px;">${inner}<div class="strip-end"></div></div>`;
+  }
+
+  // ── Grille desktop pour les strips ────────────────────────
+  // Convertit N photos en grille fixe 2 rangées max
+  // Jusqu'à 4 photos → 1 rangée, 5+ → 2 rangées
+  function desktopGrid(photos) {
+    const count = photos.length;
+    const H = 380; // valeur de --H en desktop
+    if (count === 1) {
+      return fixedWrap(flexTile(0, photos[0], 1));
+    }
+    if (count === 2) {
+      return fixedWrap(
+        flexTile(0, photos[0], 1) +
+        flexTile(1, photos[1], 1)
+      );
+    }
+    if (count === 3) {
+      return fixedWrap(
+        flexTile(0, photos[0], 1) +
+        flexTile(1, photos[1], 1) +
+        flexTile(2, photos[2], 1)
+      );
+    }
+    if (count === 4) {
+      return fixedWrap(
+        flexTile(0, photos[0], 1) +
+        flexTile(1, photos[1], 1) +
+        flexTile(2, photos[2], 1) +
+        flexTile(3, photos[3], 1)
+      );
+    }
+    // 5+ photos : 2 rangées
+    const rowCount = Math.ceil(count / 2);
+    const rowH = Math.floor((H - GAP) / 2);
+    const row1 = photos.slice(0, rowCount);
+    const row2 = photos.slice(rowCount);
+    const makeRow = (rowPhotos, startIdx) =>
+      `<div style="display:flex;gap:${GAP}px;height:${rowH}px;">` +
+      rowPhotos.map((p, i) => {
+        const pos = p.position || defaultPos;
+        const inner = p.src ? `<img src="${p.src}" style="object-position:${pos};">` : ICON;
+        return `<div class="photo-tile" style="flex:1;min-width:0;height:100%;" onclick="openLightbox(${mi},${startIdx+i})">${inner}</div>`;
+      }).join('') +
+      `</div>`;
+    return `<div style="display:flex;flex-direction:column;gap:${GAP}px;margin:0 0 18px 0;border-radius:3px;overflow:hidden;">` +
+      makeRow(row1, 0) +
+      makeRow(row2, rowCount) +
+    `</div>`;
+  }
+
+  // ── LAYOUT : side-by-side ─────────────────────────────────
+  // Toutes les photos côte à côte horizontalement.
+  if (layout === 'side-by-side') {
+
+    // Desktop : grille fixe pour tous les cas (remplace le scroll)
+    if (isDesktop) {
+      // Pour 2–4 photos avec weights définis, on respecte les proportions
+      if (n === 1) return fixedWrap(flexTile(0, photos[0], 1));
+      if (n === 2) {
+        const f = flexWeights([58, 42]);
+        return fixedWrap(flexTile(0, photos[0], f[0]) + flexTile(1, photos[1], f[1]));
+      }
+      if (n === 3) {
+        const f = flexWeights([40, 30, 30]);
+        return fixedWrap(
+          flexTile(0, photos[0], f[0]) +
+          flexTile(1, photos[1], f[1]) +
+          flexTile(2, photos[2], f[2])
+        );
+      }
+      // 4+ → grille desktop
+      return desktopGrid(photos);
+    }
+
+    if (!isScroll) {
+      // ── Fixe mobile ──
+      if (n === 1) {
+        return fixedWrap(flexTile(0, photos[0], 1));
+      }
+      if (n === 2) {
+        const f = flexWeights([58, 42]);
+        return fixedWrap(
+          flexTile(0, photos[0], f[0]) +
+          flexTile(1, photos[1], f[1])
+        );
+      }
+      if (n === 3) {
+        // Grande à gauche, 2 empilées à droite
+        const f = flexWeights([54, 23, 23]);
+        const rightFlex = f[1] + f[2];
+        const rightWeight0 = w ? w[1]/(w[1]+w[2]) : 0.5;
+        return fixedWrap(
+          flexTile(0, photos[0], f[0]) +
+          `<div style="flex:${rightFlex};min-width:0;display:flex;flex-direction:column;gap:${GAP}px;">` +
+            flexTile(1, photos[1], rightWeight0, '') +
+            flexTile(2, photos[2], 1 - rightWeight0, '') +
+          `</div>`
+        );
+      }
+      if (n === 4) {
+        // photo1 | 2+3 empilées | photo4
+        const f = flexWeights([38, 12, 12, 38]);
+        const midFlex = f[1] + f[2];
+        const midW0 = w ? w[1]/(w[1]+w[2]) : 0.5;
+        return fixedWrap(
+          flexTile(0, photos[0], f[0]) +
+          `<div style="flex:${midFlex};min-width:0;display:flex;flex-direction:column;gap:${GAP}px;">` +
+            flexTile(1, photos[1], midW0) +
+            flexTile(2, photos[2], 1 - midW0) +
+          `</div>` +
+          flexTile(3, photos[3], f[3])
+        );
+      }
+      // 5+ → strip scrollable automatiquement (trop pour tenir fixe)
+    }
+
+    // ── Scrollable mobile ──
+    const numCols = cols || 1.5;
+    const tileW = colPx(numCols);
+    const tiles = photos.map((p, pi) => pxTile(pi, p, tileW)).join('');
+    return stripWrap(tiles);
+  }
+
+  // ── LAYOUT : alternating ──────────────────────────────────
+  // Groupes de 3 : 1 grande photo + 2 empilées à droite.
+  // Le dernier groupe peut avoir 1 ou 2 photos.
+  //
+  // weights peut être :
+  //   [65, 35]              → même proportion pour tous les groupes
+  //   [[65,35],[50,50]]     → proportion par groupe (tableau de tableaux)
+  if (layout === 'alternating') {
+
+    // Desktop : grille fixe
+    if (isDesktop) {
+      return desktopGrid(photos);
+    }
+
+    // Résout le ratio grande/côté pour un groupe donné (index du groupe)
+    function groupRatio(groupIdx) {
+      if (!w) return 0.58;
+      // Tableau de tableaux : weights: [[65,35],[50,50],...]
+      if (Array.isArray(w[0])) {
+        const gw = w[groupIdx] || w[w.length - 1]; // dernier groupe = dernier weights
+        return gw[0] / (gw[0] + gw[1]);
+      }
+      // Tableau simple : weights: [65,35] → uniforme
+      return w[0] / (w[0] + w[1]);
+    }
+
+    // Génère un groupe de photos en px (utilisé pour fixe ET scroll)
+    function altGroup(startIdx, chunk, blockW, groupIdx) {
+      const gap = GAP;
+      const mainRatio = groupRatio(groupIdx);
+      if (chunk.length === 1) {
+        return pxTile(startIdx, chunk[0], blockW);
+      }
+      if (chunk.length === 2) {
+        const half = Math.floor((blockW - gap) / 2);
+        return (
+          `<div style="width:${blockW}px;flex-shrink:0;height:100%;display:flex;">` +
+            pxTile(startIdx,   chunk[0], half) +
+            spacer(gap) +
+            pxTile(startIdx+1, chunk[1], half) +
+          `</div>`
+        );
+      }
+      // 3 photos : grande gauche + 2 empilées droite
+      const mainW = Math.floor((blockW - gap) * mainRatio);
+      const sideW = blockW - gap - mainW;
+      const halfH = `calc(50% - ${gap/2}px)`;
+      return (
+        `<div style="width:${blockW}px;flex-shrink:0;height:100%;display:flex;">` +
+          pxTile(startIdx, chunk[0], mainW) +
+          spacer(gap) +
+          `<div style="width:${sideW}px;flex-shrink:0;height:100%;display:flex;flex-direction:column;">` +
+            pxTile(startIdx+1, chunk[1], sideW, `height:${halfH};`) +
+            spacer(gap, 'v') +
+            pxTile(startIdx+2, chunk[2], sideW, `height:${halfH};`) +
+          `</div>` +
+        `</div>`
+      );
+    }
+
+    if (!isScroll) {
+      // ── Fixe : tous les groupes côte à côte dans la largeur dispo ──
+      const totalGroups = Math.ceil(n / 3);
+      const screenW = Math.min(window.innerWidth, 480);
+      const totalAvail = screenW - 24 - GAP * (totalGroups - 1);
+      const blockW = Math.floor(totalAvail / totalGroups);
+      let inner = '';
+      for (let i = 0, gi = 0; i < n; i += 3, gi++) {
+        if (i > 0) inner += spacer(GAP);
+        inner += altGroup(i, photos.slice(i, i+3), blockW, gi);
+      }
+      return fixedWrap(inner);
+    }
+
+    // ── Scrollable ──
+    // Le nombre indique combien de GROUPES sont visibles (ex: 1.25 = 1 groupe + aperçu du suivant)
+    const numCols = cols || 1.1;
+    const blockW = colPx(numCols);
+    let blocks = '';
+    for (let i = 0, gi = 0; i < n; i += 3, gi++) {
+      blocks += altGroup(i, photos.slice(i, i+3), blockW, gi);
+    }
+    return stripWrap(blocks);
+  }
+
+  // Fallback
+  return '';
+}
+
+function renderFeed() {
+  const feed = document.getElementById('feed');
+  MOMENTS.forEach((m, mi) => {
+    const div = document.createElement('div');
+    div.className = 'moment';
+    div.innerHTML = `
+      <div class="moment-year">${m.year}</div>
+      <div class="moment-title">${m.title}</div>
+      ${buildMosaic(mi, m)}
+      <div class="moment-desc">${m.desc}</div>`;
+    feed.appendChild(div);
+  });
+}
+
+function buildSlider(photos) {
+  document.getElementById('lb-slider').innerHTML = photos.map(p => {
+    const content = p.src
+      ? `<img src="${p.src}" alt="${p.caption||''}">`
+      : `<div class="lb-placeholder">
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+            <rect x="2" y="5" width="32" height="26" rx="3" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+            <circle cx="18" cy="18" r="6" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+          </svg>
+          <span>Photo à venir</span>
+        </div>`;
+    return `<div class="lb-slide">${content}</div>`;
+  }).join('');
+}
+
+function setSliderPos(animated) {
+  const s = document.getElementById('lb-slider');
+  if (!animated) s.style.transition = 'none';
+  s.style.transform = `translateX(${-lbPhotoIdx * 100}%)`;
+  if (!animated) requestAnimationFrame(() => { s.style.transition = ''; });
+}
+
+function updateMeta() {
+  const m = MOMENTS[lbMomentIdx];
+  const p = m.photos[lbPhotoIdx];
+  const total = m.photos.length;
+  document.getElementById('lb-year').textContent    = m.year;
+  document.getElementById('lb-title').textContent   = m.title;
+  document.getElementById('lb-counter').textContent = total > 1 ? `${lbPhotoIdx+1} / ${total}` : '';
+  document.getElementById('lb-caption').textContent = p.caption || '';
+  document.getElementById('lb-prev').classList.toggle('hidden', lbPhotoIdx === 0);
+  document.getElementById('lb-next').classList.toggle('hidden', lbPhotoIdx === total - 1);
+}
+
+function openLightbox(mi, pi) {
+  lbMomentIdx = mi; lbPhotoIdx = pi;
+  buildSlider(MOMENTS[mi].photos);
+  setSliderPos(false);
+  updateMeta();
+  // Mémorise la position de scroll pour y revenir à la fermeture
+  lbScrollY = window.scrollY;
+  lb.classList.remove('immersive');
+  lb.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+  lb.classList.remove('open', 'immersive');
+  document.body.style.overflow = '';
+  // Retourne exactement là où l'utilisateur était
+  requestAnimationFrame(() => window.scrollTo(0, lbScrollY));
+}
+
+function lbNavigate(dir) {
+  const next = lbPhotoIdx + dir;
+  if (next < 0 || next >= MOMENTS[lbMomentIdx].photos.length) return;
+  lbPhotoIdx = next;
+  setSliderPos(true);
+  updateMeta();
+}
+
+const lb     = document.getElementById('lightbox');
+const area   = document.getElementById('lb-photo-area');
+const sliderEl = document.getElementById('lb-slider');
+let lbScrollY = 0;
+
+// ── Tap sur la photo → toggle mode immersif ──────────────
+area.addEventListener('click', e => {
+  // Ignore si c'est un swipe ou si le clic vient d'une flèche
+  if (Math.abs(tcX - tsX) > 10) return;
+  if (e.target.closest('.lb-arrow')) return;
+  lb.classList.toggle('immersive');
+});
+
+// ── Swipe horizontal (navigation entre photos) ───────────
+let tsX = 0, tcX = 0, tsY = 0, tcY = 0, swiping = false;
+
+area.addEventListener('touchstart', e => {
+  if (e.touches.length > 1) return; // pinch-zoom natif
+  if (e.target.closest('.lb-arrow')) return; // ignore les flèches
+  tsX = tcX = e.touches[0].clientX;
+  tsY = tcY = e.touches[0].clientY;
+  swiping = true;
+  sliderEl.style.transition = 'none';
+}, { passive: true });
+
+area.addEventListener('touchmove', e => {
+  if (!swiping || e.touches.length > 1) return;
+  tcX = e.touches[0].clientX;
+  tcY = e.touches[0].clientY;
+  const dx = tcX - tsX;
+  const dy = tcY - tsY;
+
+  // Toujours bloquer le scroll de la page pendant qu'on est dans le lightbox
+  e.preventDefault();
+
+  // Swipe vers le bas → translation seule, sans opacité
+  if (Math.abs(dy) > Math.abs(dx) && dy > 0) {
+    lb.style.transform = `translateY(${Math.max(0, dy * 0.6)}px)`;
+    return;
+  }
+
+  // Swipe horizontal → rubber-band aux extrémités
+  const total = MOMENTS[lbMomentIdx].photos.length;
+  const atStart = lbPhotoIdx === 0 && dx > 0;
+  const atEnd   = lbPhotoIdx === total - 1 && dx < 0;
+  if (atStart || atEnd) {
+    const dampened = dx * 0.2;
+    sliderEl.style.transform = `translateX(calc(${-lbPhotoIdx * 100}% + ${dampened}px))`;
+  } else {
+    sliderEl.style.transform = `translateX(calc(${-lbPhotoIdx * 100}% + ${dx}px))`;
+  }
+}, { passive: false });
+
+area.addEventListener('touchend', () => {
+  if (!swiping) return;
+  swiping = false;
+  sliderEl.style.transition = '';
+  const dx = tcX - tsX;
+  const dy = tcY - tsY;
+
+  // Swipe vers le bas suffisant → ferme (translation seule, sans opacité)
+  if (dy > 80 && Math.abs(dy) > Math.abs(dx)) {
+    lb.style.transition = 'transform 0.25s';
+    lb.style.transform  = 'translateY(100%)';
+    setTimeout(() => {
+      // Désactive toutes les transitions et remet transform AVANT de retirer .open,
+      // sinon le fade-out CSS d'opacité laisse brièvement voir le lightbox repositionné
+      lb.style.transition = 'none';
+      lb.style.transform  = '';
+      lb.getBoundingClientRect(); // force reflow pour appliquer les styles ci-dessus
+      closeLightbox();
+      requestAnimationFrame(() => { lb.style.transition = ''; });
+    }, 250);
+    return;
+  }
+
+  // Reset la translation verticale si pas assez de swipe vers le bas
+  lb.style.transition = 'transform 0.2s';
+  lb.style.transform  = '';
+  setTimeout(() => { lb.style.transition = ''; }, 200);
+
+  // Swipe horizontal → navigation (retour élastique si aux extrémités)
+  const total = MOMENTS[lbMomentIdx].photos.length;
+  const atStart = lbPhotoIdx === 0 && dx > 0;
+  const atEnd   = lbPhotoIdx === total - 1 && dx < 0;
+  if (!atStart && !atEnd && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+    lbNavigate(dx < 0 ? 1 : -1);
+  } else {
+    setSliderPos(true);
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape')     closeLightbox();
+  if (e.key === 'ArrowLeft')  lbNavigate(-1);
+  if (e.key === 'ArrowRight') lbNavigate(1);
+});
+
+renderFeed();
+
+// Recalcule les largeurs en pixels si l'orientation change
+window.addEventListener('resize', () => {
+  document.getElementById('feed').innerHTML = '';
+  renderFeed();
+});
+</script>
+</body>
+</html>
