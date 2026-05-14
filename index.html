@@ -176,7 +176,6 @@
     padding-bottom: 28px;
     border-bottom: 0.5px solid var(--divider);
   }
-  .moment:last-child .moment-desc { border-bottom: none; }
 
   /* ── Lightbox ── */
   .lightbox {
@@ -380,15 +379,13 @@
 
     /* Épitaphe desktop */
     .epitaphe-portrait img,
-    .epitaphe-portrait-ring { width: 200px; height: 200px; }
+    .epitaphe-portrait-ring { width: 300px; height: 300px; }
     .epitaphe-text { font-size: 16px; }
   }
 
   /* ── Épitaphe ── */
   .epitaphe-section {
     padding: 40px 24px 64px;
-    border-top: 0.5px solid var(--divider);
-    margin-top: 0;
   }
   .epitaphe-label {
     font-size: 11px;
@@ -405,10 +402,10 @@
     margin-bottom: 32px;
   }
   .epitaphe-portrait img {
-    width: 168px;
-    height: 168px;
-    border-radius: 50%;
-    object-fit: cover;
+    width: 260px;
+    height: 260px;
+    border-radius: 0;
+    object-fit: contain;
     display: block;
   }
   .epitaphe-portrait-ring {
@@ -436,7 +433,7 @@
     max-width: 560px;
     margin: 0 auto;
   }
-  .epitaphe-text p { margin-bottom: 1.1em; }
+  .epitaphe-text p { margin-bottom: 0.55em; }
   .epitaphe-text p:last-child { margin-bottom: 0; }
   .epitaphe-signature {
     margin-top: 32px;
@@ -1118,12 +1115,20 @@ function renderFeed() {
       <img src="photos/grand-papa-pommier.png" alt="Gilbert Gagnon" onerror="this.outerHTML='<div class=\\'epitaphe-portrait-ring\\'><span>Photo de Gilbert</span></div>'">
     </div>
     <div class="epitaphe-text">
-      <p>Des tranches de pommes. Là, au centre de la table dans une petite assiette. Tous les jours, au bout de la table, tu nous tranchais des pommes, à nous, tes petits-enfants. Et elles étaient disponibles, à tout moment, dans l'attente, tout près. Elles étaient là…<br><br>Comme toi.<br></p>
-      <p>Là, à feuilleter quelques pages ou à griffonner des hypothèses sur le rebord de ton énième mot croisé.<br><br>Là, à couper quelques carottes pour la soupe quotidienne (ah, la soupe à grand-papa!).<br><br>Là, assis dans ta chaise, éveillé ou endormi, ou entre les deux.<br><br>Là, dans la piscine, avec ton casque de bain qui se tenait tout juste sur le bout de ta tête.<br><br>Là, à un coup de fil pour te demander un lift pour l'école, parce qu'il pleuvait, ou parce qu'on s'était encore une fois levés un peu trop tard.<br><br>Là, à jouer aux cartes, aux dés pis à tous les jeux qu'on te faisait essayer.<br><br>Là, à nous résumer ce que t'avais vu passer aux nouvelles ou à jaser de la dernière game de hockey.<br><br>Là, à partager un repas en famille, écoutant toutes nos anecdotes de jeunes qui te faisaient rire.<br><br>Là, pour grand-maman, dans tous les sentiers escarpés que la maladie lui a fait emprunter.<br></p>
+      <p>Des tranches de pommes. Là, au centre de la table dans une petite assiette. Tous les jours, au bout de la table, tu nous tranchais des pommes, à nous, tes petits-enfants. Et elles étaient disponibles, à tout moment, dans l'attente, tout près. Elles étaient là…<br>Comme toi.</p>
+      <p>Là, à feuilleter quelques pages ou à griffonner des hypothèses sur le rebord de ton énième mot croisé.</p>
+      <p>Là, à couper quelques carottes pour la soupe quotidienne (ah, la soupe à grand-papa!).</p>
+      <p>Là, assis dans ta chaise, éveillé ou endormi, ou entre les deux.</p>
+      <p>Là, dans la piscine, avec ton casque de bain qui se tenait tout juste sur le bout de ta tête.</p>
+      <p>Là, à un coup de fil pour te demander un lift pour l'école, parce qu'il pleuvait, ou parce qu'on s'était encore une fois levés un peu trop tard.</p>
+      <p>Là, à jouer aux cartes, aux dés pis à tous les jeux qu'on te faisait essayer.</p>
+      <p>Là, à nous résumer ce que t'avais vu passer aux nouvelles ou à jaser de la dernière game de hockey.</p>
+      <p>Là, à partager un repas en famille, écoutant toutes nos anecdotes de jeunes qui te faisaient rire.</p>
+      <p>Là, pour grand-maman, dans tous les sentiers escarpés que la maladie lui a fait emprunter.</p>
       <p>Sur la table, il y avait des tranches de pommes qui attendaient&nbsp;: patientes, paisibles et disponibles. Et au bout de la table, grand-papa, il y avait toi, notre pommier.</p>
       <p>La famille est plus forte que tout, grand-papa. Sois sans craintes. Nous serons ton verger.</p>
     </div>
-    <div class="epitaphe-signature">— Les petits-enfants</div>
+    <div class="epitaphe-signature">— Tes petits-enfants</div>
   `;
   feed.appendChild(portrait);
 }
